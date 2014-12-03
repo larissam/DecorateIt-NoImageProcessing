@@ -10,12 +10,13 @@ from binascii import a2b_base64
 from werkzeug import secure_filename
 from datetime import datetime
 
-# Modules for image processing
-import numpy as np
-import cv2
-from PIL import Image, ImageFilter, ImageOps
+# Commented out these modules because this is the version without image processing
+# # Modules for image processing
+# import numpy as np
+# import cv2
+# from PIL import Image, ImageFilter, ImageOps
 
-from OverlayPNG import OverlayImage
+# from OverlayPNG import OverlayImage
 
 # Module for sending users emails
 from flask.ext.mail import Mail, Message
@@ -152,89 +153,90 @@ def upload_file():
 		#Full filename
 		full_filename = "static/images/purikuras/" + filename
 
-
-		#If they want to process the image, then do so
-		if request.form.getlist('imageproc'):
-			enhance_image(full_filename)
+		# Commented out these modules because this is the version without image processing
+		# #If they want to process the image, then do so
+		# if request.form.getlist('imageproc'):
+		# 	enhance_image(full_filename)
 
 		#Store filename in database
         newPurikura = model.Purikura(user_id=session['id'], combined_src=full_filename, foreground_src=full_filename)
         model.session.add(newPurikura)
         model.session.commit()
         return redirect(url_for('decorate', filename=full_filename))
- 
-""" Enlarges eyes and smoothes skin in the image using OpenCV. """
-def enhance_image(filename):
 
-	#Haar cascades for face and eye detection
-	face_cascade = cv2.CascadeClassifier('imageproc/haarcascade.xml')
-	eye_cascade = cv2.CascadeClassifier('imageproc/haarcascade_eye.xml')
+# Commented out these modules because this is the version without image processing
+# """ Enlarges eyes and smoothes skin in the image using OpenCV. """
+# def enhance_image(filename):
 
-	#Image mask for eye
-	mask = cv2.imread('imageproc/mask2.png', 0) #0 means grayscale
+# 	#Haar cascades for face and eye detection
+# 	face_cascade = cv2.CascadeClassifier('imageproc/haarcascade.xml')
+# 	eye_cascade = cv2.CascadeClassifier('imageproc/haarcascade_eye.xml')
 
-	#Blending coefficients when eye with transparent mask is put back on face
-	S = (0.5, 0.5, 0.5, 0.5)
-	D = (0.5, 0.5, 0.5, 0.5)
+# 	#Image mask for eye
+# 	mask = cv2.imread('imageproc/mask2.png', 0) #0 means grayscale
 
-	#Read in image and make a gray version for eye detection
-	img = cv2.imread(filename)
-	gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+# 	#Blending coefficients when eye with transparent mask is put back on face
+# 	S = (0.5, 0.5, 0.5, 0.5)
+# 	D = (0.5, 0.5, 0.5, 0.5)
+
+# 	#Read in image and make a gray version for eye detection
+# 	img = cv2.imread(filename)
+# 	gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
-	base_img = cv2.cv.LoadImage(filename)
-	#Detect faces
-	faces = face_cascade.detectMultiScale(gray, scaleFactor = 1.3, minNeighbors = 7, minSize = (10, 10), flags = cv2.cv.CV_HAAR_SCALE_IMAGE)
+# 	base_img = cv2.cv.LoadImage(filename)
+# 	#Detect faces
+# 	faces = face_cascade.detectMultiScale(gray, scaleFactor = 1.3, minNeighbors = 7, minSize = (10, 10), flags = cv2.cv.CV_HAAR_SCALE_IMAGE)
 
-	for (x,y,w,h) in faces:
-		#Select region from (x,y) to (x+w, y+h)
-		roi_gray = gray[y:y+h, x:x+w]
-		roi_color = img[y:y+h, x:x+w]
-		eyes = eye_cascade.detectMultiScale(roi_gray)
+# 	for (x,y,w,h) in faces:
+# 		#Select region from (x,y) to (x+w, y+h)
+# 		roi_gray = gray[y:y+h, x:x+w]
+# 		roi_color = img[y:y+h, x:x+w]
+# 		eyes = eye_cascade.detectMultiScale(roi_gray)
 
-		for (ex,ey,ew,eh) in eyes:
-			#Select eye
-			eye = roi_color[ey:ey+eh, ex:ex+ew]
+# 		for (ex,ey,ew,eh) in eyes:
+# 			#Select eye
+# 			eye = roi_color[ey:ey+eh, ex:ex+ew]
 
-			#Enlarge eye 20%
-			big_eye = cv2.resize(eye,None,fx=1.2, fy=1.2, interpolation = cv2.INTER_CUBIC)
+# 			#Enlarge eye 20%
+# 			big_eye = cv2.resize(eye,None,fx=1.2, fy=1.2, interpolation = cv2.INTER_CUBIC)
 
-			#Use the big_eye's height and width to resize the eye mask
-			big_eye_h, big_eye_w = big_eye.shape[:2]
-			mask = cv2.resize(mask,(big_eye_w, big_eye_h), interpolation = cv2.INTER_CUBIC)
+# 			#Use the big_eye's height and width to resize the eye mask
+# 			big_eye_h, big_eye_w = big_eye.shape[:2]
+# 			mask = cv2.resize(mask,(big_eye_w, big_eye_h), interpolation = cv2.INTER_CUBIC)
 
-			#Mask the big eye and make a gray version
-			big_eye_masked = cv2.bitwise_and(big_eye, big_eye, mask=mask)
-			big_eye_gray_masked = cv2.cvtColor(big_eye_masked, cv2.COLOR_BGR2GRAY)
+# 			#Mask the big eye and make a gray version
+# 			big_eye_masked = cv2.bitwise_and(big_eye, big_eye, mask=mask)
+# 			big_eye_gray_masked = cv2.cvtColor(big_eye_masked, cv2.COLOR_BGR2GRAY)
 
-			#Use the gray version to generate the alpha channel for your transparent image
-			big_eye_thresh, alpha = cv2.threshold(big_eye_gray_masked, 0, 255, cv2.THRESH_BINARY)
+# 			#Use the gray version to generate the alpha channel for your transparent image
+# 			big_eye_thresh, alpha = cv2.threshold(big_eye_gray_masked, 0, 255, cv2.THRESH_BINARY)
 
-			#Split the big eye into r, g, and b channels
-			big_eye_b, big_eye_g, big_eye_r = cv2.split(big_eye_masked)
+# 			#Split the big eye into r, g, and b channels
+# 			big_eye_b, big_eye_g, big_eye_r = cv2.split(big_eye_masked)
 
-			#Add the alpha channel to the rgb channels and merge into a new image
-			rgba = (big_eye_b, big_eye_g, big_eye_r, alpha)
-			big_eye_w_alpha = cv2.merge(rgba)
+# 			#Add the alpha channel to the rgb channels and merge into a new image
+# 			rgba = (big_eye_b, big_eye_g, big_eye_r, alpha)
+# 			big_eye_w_alpha = cv2.merge(rgba)
 
-			#Write the eye with transparency mask to disk so OverlayPNG script can access
-			cv2.imwrite('imageproc/bigeyewithalpha.png', big_eye_w_alpha)
-			big_eye_w_alpha = cv2.cv.LoadImage('imageproc/bigeyewithalpha.png')
+# 			#Write the eye with transparency mask to disk so OverlayPNG script can access
+# 			cv2.imwrite('imageproc/bigeyewithalpha.png', big_eye_w_alpha)
+# 			big_eye_w_alpha = cv2.cv.LoadImage('imageproc/bigeyewithalpha.png')
 
-			#Overlay the original with the new eye
-			OverlayImage(base_img, big_eye_w_alpha, x+ex-5, y+ey-5, S, D)
+# 			#Overlay the original with the new eye
+# 			OverlayImage(base_img, big_eye_w_alpha, x+ex-5, y+ey-5, S, D)
 
-			#Save revised version to disk
-			cv2.cv.SaveImage('imageproc/src.png', base_img)
+# 			#Save revised version to disk
+# 			cv2.cv.SaveImage('imageproc/src.png', base_img)
 
-		#Open version again as a numpy array
-		img = cv2.imread('imageproc/src.png')
-		roi_color = img[y:y+h, x:x+w]
+# 		#Open version again as a numpy array
+# 		img = cv2.imread('imageproc/src.png')
+# 		roi_color = img[y:y+h, x:x+w]
 
-		#Smooth face and replace it
-		smoothed_face = cv2.bilateralFilter(roi_color, 3, 75, 75)
-		roi_color[0:smoothed_face.shape[1], 0:smoothed_face.shape[0]] = smoothed_face
-	cv2.imwrite(filename, img)
+# 		#Smooth face and replace it
+# 		smoothed_face = cv2.bilateralFilter(roi_color, 3, 75, 75)
+# 		roi_color[0:smoothed_face.shape[1], 0:smoothed_face.shape[0]] = smoothed_face
+# 	cv2.imwrite(filename, img)
 
 
 """ Shows the photobooth template. """
